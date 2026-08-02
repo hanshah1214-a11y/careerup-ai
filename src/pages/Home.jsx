@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FileText, Wand2, SearchCheck, Mail, TrendingUp, ShieldCheck,
   Check, Sparkles, ArrowRight, ChevronDown,
 } from "lucide-react";
 import { siteConfig } from "../lib/config.js";
+import CheckoutModal from "../components/CheckoutModal.jsx";
 
 const features = [
   { icon: Wand2, title: "AI Resume Rewriting", desc: "Paste your resume and a job post — get a tailored, action-verb-powered version optimized for that exact role." },
@@ -42,8 +44,12 @@ const plans = [
 ];
 
 export default function Home() {
-  const upgradeUrl = (plan) =>
-    plan === "Free" ? "/app" : siteConfig.premiumCheckout;
+  const [checkout, setCheckout] = useState(null);
+
+  const openCheckout = (plan) => {
+    if (plan === "Free") return;
+    setCheckout(plan === "Pro" ? { plan: "Pro", price: "$9" } : { plan: "Premium", price: "$4" });
+  };
 
   return (
     <>
@@ -158,7 +164,13 @@ export default function Home() {
                 ))}
               </ul>
               <a
-                href={upgradeUrl(p)}
+                href={p.name === "Free" ? "/app" : undefined}
+                onClick={(e) => {
+                  if (p.name !== "Free") {
+                    e.preventDefault();
+                    openCheckout(p.name);
+                  }
+                }}
                 className={`text-center font-semibold px-4 py-3 rounded-xl transition-all ${
                   p.highlight
                     ? "bg-indigo-600 hover:bg-indigo-500 text-white"
@@ -181,7 +193,7 @@ export default function Home() {
               ["Is my resume safe?", "Yes. Everything runs in your browser — we never store or send your resume anywhere."],
               ["Why do I need an ATS score?", "Over 75% of resumes are rejected by automated systems before a human sees them. We tell you exactly what to fix."],
               ["How is the AI free?", "Our optimizer runs on smart in-browser AI so the free tier has no hidden costs for us — that's why it stays free."],
-              ["How do I pay for Premium?", "Click Get Premium and pay with any card via our secure checkout. You get instant access."],
+              ["How do I pay for Premium?", "Pay securely via NayaPay (Pakistan) or card. Your account is upgraded within minutes of payment verification."],
               ["Can I get a refund?", "Yes — 7-day money-back guarantee, no questions asked. Message us on WhatsApp."],
             ].map(([q, a]) => (
               <details key={q} className="group bg-slate-50 border border-slate-200 rounded-xl p-5">
@@ -208,6 +220,14 @@ export default function Home() {
           Optimize My Resume <ArrowRight size={18} />
         </Link>
       </section>
+
+      {/* Checkout modal */}
+      <CheckoutModal
+        open={checkout !== null}
+        plan={checkout?.plan || "Premium"}
+        price={checkout?.price || "$4"}
+        onClose={() => setCheckout(null)}
+      />
     </>
   );
 }

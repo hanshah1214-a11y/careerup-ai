@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Mail, MessageCircle } from "lucide-react";
 import { siteConfig } from "../lib/config.js";
 

@@ -1,13 +1,15 @@
 import { useRef, useState } from "react";
 import {
-  Upload, Wand2, Copy, Check, Download, Lock, Sparkles,
-  MessageCircle, FileText, Gauge, AlertTriangle,
+  Upload, Wand2, Copy, Check, Download, Sparkles,
+  FileText, Gauge, AlertTriangle, Briefcase, Share2, Save,
 } from "lucide-react";
 import {
   readResumeFile, parseResume, optimizeResume, generateCoverLetter, scoreResume,
+  generateInterviewQuestions, generateLinkedInToolkit,
 } from "../lib/engine.js";
 import { usePremium } from "../lib/usePremium.js";
 import { siteConfig } from "../lib/config.js";
+import CheckoutModal from "../components/CheckoutModal.jsx";
 
 export default function Builder() {
   const { isPremium, upgrade, remaining, consume } = usePremium();
@@ -23,7 +25,9 @@ export default function Builder() {
   const [editableResume, setEditableResume] = useState("");
   const [company, setCompany] = useState("");
   const [showPaywall, setShowPaywall] = useState(false);
-  const [featureGate, setFeatureGate] = useState("");
+  const [savedList, setSavedList] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("careerup_saved") || "[]"); } catch { return []; }
+  });
   const fileRef = useRef(null);
 
   const freeLeft = remaining("rewrites", siteConfig.freeDailyRewrites);
@@ -53,7 +57,6 @@ export default function Builder() {
       return;
     }
     if (canOptimize) {
-      setFeatureGate("Unlimited resume rewrites");
       setShowPaywall(true);
       return;
     }
@@ -65,8 +68,11 @@ export default function Builder() {
         const optimized = optimizeResume(parsed, jobDesc);
         const score = scoreResume(parsed, jobDesc);
         const cover = generateCoverLetter(parsed, optimized, jobDesc, company);
-        setResult({ parsed, optimized, score, cover });
+        const interview = generateInterviewQuestions(optimized, jobDesc);
+        const linkedin = generateLinkedInToolkit(parsed, optimized, jobDesc, company);
+        setResult({ parsed, optimized, score, cover, interview, linkedin });
         setEditableResume(formatResume(optimized));
+        setTab("resume");
         setStep(3);
         if (!isPremium) consume("rewrites");
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -79,13 +85,7 @@ export default function Builder() {
 
   const handleCover = () => {
     if (!result) return;
-    if (!isPremium && coverLeft <= 0) {
-      setFeatureGate("Unlimited cover letters");
-      setShowPaywall(true);
-      return;
-    }
-    setTab("cover");
-    if (!isPremium) consume("covers");
+    openTab("cover");
   };
 
   const copy = async (text, key) => {
@@ -111,6 +111,70 @@ export default function Builder() {
     a.download = "optimized-resume.txt";
     a.click();
     URL.revokeObjectURL(a.href);
+  };
+
+  const downloadPdf = () => {
+    if (!result) return;
+    const printWin = window.open("", "_blank");
+    if (!printWin) return;
+    const name = result.optimized.name.toUpperCase();
+    const contact = result.optimized.contact.join("  |  ");
+    const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    printWin.document.write(`<!doctype html><html><head><title>${esc(name)} — Resume</title><style>
+      body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:760px;margin:40px auto;padding:0 24px;line-height:1.45}
+      h1{font-size:22px;margin:0 0 2px;letter-spacing:.5px} .contact{color:#444;font-size:13px;margin-bottom:18px}
+      h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #333;padding-bottom:3px;margin:20px 0 8px}
+      .skills{font-size:13px} ul{margin:4px 0 8px;padding-left:18px;font-size:13px} li{margin:3px 0} p{font-size:13px;margin:0 0 6px}
+      @media print{body{margin:0}}
+    </style></head><body><h1>${esc(name)}</h1>${contact ? `<div class="contact">${esc(contact)}</div>` : ""}
+    <h2>Professional Summary</h2><p>${esc(result.optimized.summary)}</p>
+    <h2>Core Skills</h2><div class="skills">${esc(result.optimized.skills.join(", "))}</div>
+    ${result.optimized.experience.length ? `<h2>Professional Experience</h2><ul>${result.optimized.experience.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
+    ${result.optimized.projects.length ? `<h2>Projects</h2><ul>${result.optimized.projects.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
+    ${result.optimized.education.length ? `<h2>Education</h2><ul>${result.optimized.education.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
+    <p style="margin-top:28px;font-size:11px;color:#888">Optimized with CareerUp AI</p>
+    <script>window.onload=function(){window.print()}<\/script></body></html>`);
+    printWin.document.close();
+  };
+
+  const saveVersion = () => {
+    if (!result) return;
+    const name = result.optimized.name || "Resume";
+    const item = {
+      id: Date.now(),
+      title: `${name} — ${result.optimized.role} (${new Date().toLocaleDateString()})`,
+      text: editableResume,
+    };
+    const next = [item, ...savedList].slice(0, 20);
+    setSavedList(next);
+    localStorage.setItem("careerup_saved", JSON.stringify(next));
+    setCopied("saved");
+    setTimeout(() => setCopied(""), 1500);
+  };
+
+  const loadVersion = (text) => {
+    setEditableResume(text);
+    setCopied("loaded");
+    setTimeout(() => setCopied(""), 1500);
+  };
+
+  const clearSaved = () => {
+    setSavedList([]);
+    localStorage.removeItem("careerup_saved");
+  };
+
+  const openTab = (target) => {
+    const proTabs = ["interview", "linkedin"];
+    if (proTabs.includes(target) && !isPremium && coverLeft <= 0) {
+      setShowPaywall(true);
+      return;
+    }
+    if (target === "cover" && !isPremium && coverLeft <= 0) {
+      setShowPaywall(true);
+      return;
+    }
+    setTab(target);
+    if (!isPremium && (target === "cover" || proTabs.includes(target))) consume("covers");
   };
 
   const gaugeColor = result?.score.score >= 75 ? "text-emerald-500" : result?.score.score >= 50 ? "text-amber-500" : "text-rose-500";
@@ -213,23 +277,51 @@ export default function Builder() {
                   <span key={k} className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-medium px-2.5 py-1 rounded-full">{k}</span>
                 ))}
               </div>
+              {result.score.missingKeywords.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Keywords missing from your resume</p>
+                  <div className="flex flex-wrap gap-2">
+                    {result.score.missingKeywords.slice(0, 10).map((k) => (
+                      <span key={k} className="bg-rose-50 text-rose-700 border border-rose-200 text-xs font-medium px-2.5 py-1 rounded-full">+ {k}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Output tabs */}
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-            <div className="flex border-b border-slate-200">
+            <div className="flex border-b border-slate-200 overflow-x-auto">
               <button
                 onClick={() => setTab("resume")}
-                className={`px-5 py-3 font-semibold text-sm border-b-2 transition-colors ${tab === "resume" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+                className={`px-5 py-3 font-semibold text-sm border-b-2 transition-colors shrink-0 ${tab === "resume" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
               >
                 Optimized Resume
               </button>
               <button
-                onClick={() => setTab("cover")}
-                className={`px-5 py-3 font-semibold text-sm border-b-2 transition-colors ${tab === "cover" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+                onClick={() => openTab("cover")}
+                className={`px-5 py-3 font-semibold text-sm border-b-2 transition-colors shrink-0 ${tab === "cover" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
               >
                 Cover Letter
+              </button>
+              <button
+                onClick={() => openTab("interview")}
+                className={`px-5 py-3 font-semibold text-sm border-b-2 transition-colors shrink-0 ${tab === "interview" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+              >
+                Interview Prep
+              </button>
+              <button
+                onClick={() => openTab("linkedin")}
+                className={`px-5 py-3 font-semibold text-sm border-b-2 transition-colors shrink-0 ${tab === "linkedin" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+              >
+                LinkedIn Toolkit
+              </button>
+              <button
+                onClick={() => setTab("versions")}
+                className={`px-5 py-3 font-semibold text-sm border-b-2 transition-colors shrink-0 ${tab === "versions" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+              >
+                Versions
               </button>
             </div>
 
@@ -249,8 +341,11 @@ export default function Builder() {
                     <button onClick={download} className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors">
                       <Download size={16} /> Download .txt
                     </button>
-                    <button onClick={() => window.print()} className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors">
-                      <FileText size={16} /> Print / Save PDF
+                    <button onClick={downloadPdf} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors">
+                      <FileText size={16} /> Download PDF
+                    </button>
+                    <button onClick={saveVersion} className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors">
+                      {copied === "saved" ? <Check size={16} className="text-emerald-600" /> : <Save size={16} />} {copied === "saved" ? "Saved!" : "Save Version"}
                     </button>
                   </div>
                 </>
@@ -266,11 +361,111 @@ export default function Builder() {
                   </button>
                 </div>
               )}
+
+              {tab === "interview" && (
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><Briefcase size={16} className="text-indigo-600" /> Behavioral questions</h4>
+                    <ul className="space-y-2 text-sm text-slate-700">
+                      {result.interview.behavioral.map((q) => (
+                        <li key={q} className="bg-slate-50 border border-slate-200 rounded-lg p-3">{q}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><Sparkles size={16} className="text-indigo-600" /> Technical / role questions</h4>
+                    <ul className="space-y-2 text-sm text-slate-700">
+                      {result.interview.technical.map((q) => (
+                        <li key={q} className="bg-slate-50 border border-slate-200 rounded-lg p-3">{q}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><AlertTriangle size={16} className="text-indigo-600" /> Questions to prep for</h4>
+                    <ul className="space-y-2 text-sm text-slate-700">
+                      {result.interview.fit.map((q) => (
+                        <li key={q} className="bg-slate-50 border border-slate-200 rounded-lg p-3">{q}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button onClick={() => copy(`${result.interview.behavioral.join("\n\n")}\n\n${result.interview.technical.join("\n\n")}\n\n${result.interview.fit.join("\n\n")}`, "interview")} className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors">
+                    {copied === "interview" ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />} Copy all questions
+                  </button>
+                </div>
+              )}
+
+              {tab === "linkedin" && (
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><Share2 size={16} className="text-indigo-600" /> Headline</h4>
+                    <pre className="whitespace-pre-wrap font-sans text-sm bg-slate-50 border border-slate-200 rounded-xl p-4 leading-relaxed text-slate-800">{result.linkedin.headline}</pre>
+                    <button onClick={() => copy(result.linkedin.headline, "li-head")} className="mt-2 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-3 py-2 rounded-lg text-sm transition-colors">
+                      {copied === "li-head" ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />} Copy
+                    </button>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><Share2 size={16} className="text-indigo-600" /> About section</h4>
+                    <pre className="whitespace-pre-wrap font-sans text-sm bg-slate-50 border border-slate-200 rounded-xl p-4 leading-relaxed text-slate-800">{result.linkedin.about}</pre>
+                    <button onClick={() => copy(result.linkedin.about, "li-about")} className="mt-2 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-3 py-2 rounded-lg text-sm transition-colors">
+                      {copied === "li-about" ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />} Copy
+                    </button>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><Share2 size={16} className="text-indigo-600" /> Skills (for your profile)</h4>
+                    <pre className="whitespace-pre-wrap font-sans text-sm bg-slate-50 border border-slate-200 rounded-xl p-4 leading-relaxed text-slate-800">{result.linkedin.skillsSection}</pre>
+                    <button onClick={() => copy(result.linkedin.skillsSection, "li-skills")} className="mt-2 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-3 py-2 rounded-lg text-sm transition-colors">
+                      {copied === "li-skills" ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />} Copy
+                    </button>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><Share2 size={16} className="text-indigo-600" /> Post / message</h4>
+                    <pre className="whitespace-pre-wrap font-sans text-sm bg-slate-50 border border-slate-200 rounded-xl p-4 leading-relaxed text-slate-800">{result.linkedin.experiencePost}</pre>
+                    <button onClick={() => copy(result.linkedin.experiencePost, "li-post")} className="mt-2 inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-3 py-2 rounded-lg text-sm transition-colors">
+                      {copied === "li-post" ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />} Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {tab === "versions" && (
+                <div className="space-y-4">
+                  {savedList.length === 0 ? (
+                    <p className="text-sm text-slate-500 py-6 text-center">No saved versions yet. Edit your resume and hit "Save Version" to keep it here.</p>
+                  ) : (
+                    <>
+                      {savedList.map((v) => (
+                        <div key={v.id} className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 text-sm truncate">{v.title}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{v.text.length} characters</p>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button onClick={() => loadVersion(v.text)} className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors">
+                              {copied === "loaded" ? <Check size={14} /> : <Copy size={14} />} Load
+                            </button>
+                            <button
+                              onClick={() => {
+                                const next = savedList.filter((x) => x.id !== v.id);
+                                setSavedList(next);
+                                localStorage.setItem("careerup_saved", JSON.stringify(next));
+                              }}
+                              className="inline-flex items-center gap-1.5 bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-600 text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button onClick={clearSaved} className="text-xs text-rose-500 hover:text-rose-700 font-semibold">Clear all saved versions</button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-4">
             <button
               onClick={handleOptimize}
               className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-3 rounded-xl transition-colors"
@@ -278,7 +473,10 @@ export default function Builder() {
               <Wand2 size={16} /> Optimize Again
             </button>
             <button onClick={handleCover} className="inline-flex items-center justify-center gap-2 bg-white border border-slate-300 hover:border-indigo-400 text-slate-800 font-bold px-4 py-3 rounded-xl transition-colors">
-              <Sparkles size={16} /> Generate Cover Letter
+              <Sparkles size={16} /> Cover Letter
+            </button>
+            <button onClick={() => openTab("interview")} className="inline-flex items-center justify-center gap-2 bg-white border border-slate-300 hover:border-indigo-400 text-slate-800 font-bold px-4 py-3 rounded-xl transition-colors">
+              <Briefcase size={16} /> Interview Prep
             </button>
             <button onClick={() => { setStep(1); setResult(null); }} className="inline-flex items-center justify-center gap-2 bg-white border border-slate-300 hover:border-indigo-400 text-slate-800 font-bold px-4 py-3 rounded-xl transition-colors">
               <Upload size={16} /> New Resume
@@ -288,43 +486,13 @@ export default function Builder() {
       )}
 
       {/* Paywall modal */}
-      {showPaywall && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-7 fade-up">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-              <Lock size={24} />
-            </div>
-            <h3 className="text-xl font-extrabold text-slate-900 mb-1">Unlock {featureGate}</h3>
-            <p className="text-sm text-slate-600 mb-5">
-              Upgrade to Premium for just <span className="font-bold">$4/month</span> and get unlimited
-              rewrites, unlimited cover letters, and detailed ATS fixes.
-            </p>
-            <a
-              href={siteConfig.premiumCheckout}
-              target="_blank"
-              rel="noreferrer"
-              onClick={upgrade}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-3.5 rounded-xl mb-3 transition-colors"
-            >
-              <Sparkles size={18} /> Upgrade — Pay with Card
-            </a>
-            <a
-              href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent("Hi! I want to subscribe to CareerUp AI Premium.")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 py-3.5 rounded-xl transition-colors"
-            >
-              <MessageCircle size={18} /> Pay via WhatsApp
-            </a>
-            <button
-              onClick={() => setShowPaywall(false)}
-              className="mt-4 w-full text-sm text-slate-500 hover:text-slate-800 font-medium"
-            >
-              Not now — I'll use the free tier
-            </button>
-          </div>
-        </div>
-      )}
+      <CheckoutModal
+        open={showPaywall}
+        plan="Premium"
+        price="$4"
+        onClose={() => setShowPaywall(false)}
+        onUpgraded={upgrade}
+      />
     </div>
   );
 }
@@ -355,3 +523,4 @@ function formatResume(opt) {
   }
   return parts.join("\n");
 }
+

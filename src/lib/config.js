@@ -2,26 +2,29 @@
 // MONETIZATION CONFIG — edit these to start earning
 // =============================================================
 //
-// To start making money you need ONE of these:
-//   A) Create a free LemonSqueezy store (lemonsqueezy.com) and
-//      paste your checkout links below. It handles global card
-//      payments, VAT, taxes and email delivery. Zero setup fee.
-//   B) Or a Gumroad product link.
-//   C) Or accept payments manually via WhatsApp/Bank and deliver
-//      the premium unlock code by hand.
-//
-// Every "premium" button on the site will redirect to your
-// checkout link so users can pay immediately.
+// Payments are collected via NayaPay (Pakistan). The buyer sees
+// your account details on the checkout popup, transfers the money,
+// then taps "I've paid" to confirm on WhatsApp — you verify and
+// they're upgraded.
 
 export const siteConfig = {
   name: "CareerUp AI",
   tagline: "Resume optimizer, cover letters & ATS checker powered by AI",
 
   // WhatsApp number in international format, digits only.
-  // Used for sales chat + manual payment checkout.
-  whatsapp: "92XXXXXXXXXX",
+  // Used for sales chat + payment confirmation.
+  whatsapp: "923028344138",
 
-  // Payment links (create a product called "CareerUp Premium").
+  // NayaPay receiving account — shown to buyers on the paywall.
+  nayaPay: {
+    accountName: "SYED M HASSAN NAWAJ BUKHARI",
+    accountNumber: "03028344138",
+    amountPKR: "1,500", // premium price in PKR
+    proAmountPKR: "3,000", // pro price in PKR
+  },
+
+  // Card checkout (LemonSqueezy). Optional — leave "your-store" and
+  // card payments stay hidden; NayaPay + WhatsApp are used instead.
   premiumCheckout: "https://your-store.lemonsqueezy.com/buy/xxxxxx",
   proCheckout: "https://your-store.lemonsqueezy.com/buy/xxxxxx",
 

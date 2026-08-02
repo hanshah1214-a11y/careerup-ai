@@ -19,38 +19,45 @@ const RESUME_SECTION_LABELS = {
   contact: ["contact", "profile", "summary", "objective"],
 };
 
-export function extractTextFromPdf(arrayBuffer) {
-  return new Promise((resolve, reject) => {
-    const src = URL.createObjectURL(new Blob([arrayBuffer], { type: "application/pdf" }));
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    document.body.appendChild(iframe);
-    iframe.src = src;
-    iframe.onload = () => {
-      try {
-        const win = iframe.contentWindow;
-        if (!win || !win.document || !win.document.body) throw new Error("no pdf");
-        let text = "";
-        const walk = (node) => {
-          node.childNodes.forEach((child) => {
-            if (child.nodeType === 3) text += child.textContent + " ";
-            else if (child.nodeType === 1) walk(child);
-          });
-        };
-        walk(win.document.body);
-        URL.revokeObjectURL(src);
-        document.body.removeChild(iframe);
-        resolve(text.trim());
-      } catch (e) {
-        reject(e);
-      }
-    };
-    iframe.onerror = () => {
-      URL.revokeObjectURL(src);
-      document.body.removeChild(iframe);
-      reject(new Error("Could not read PDF"));
-    };
-  });
+let _pdfjs = null;
+let _mammoth = null;
+
+async function getPdfjs() {
+  if (!_pdfjs) {
+    const mod = await import("pdfjs-dist");
+    mod.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/build/pdf.worker.min.mjs",
+      import.meta.url
+    ).toString();
+    _pdfjs = mod;
+  }
+  return _pdfjs;
+}
+
+async function getMammoth() {
+  if (!_mammoth) {
+    const mod = await import("mammoth/mammoth.browser.js");
+    _mammoth = mod.default || mod;
+  }
+  return _mammoth;
+}
+
+export async function extractTextFromPdf(arrayBuffer) {
+  const pdfjsLib = await getPdfjs();
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+  let text = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map((item) => item.str).join(" ") + "\n";
+  }
+  return text.trim();
+}
+
+export async function extractTextFromDocx(arrayBuffer) {
+  const mammoth = await getMammoth();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value.trim();
 }
 
 export function readFileAsText(file) {
@@ -65,14 +72,12 @@ export function readFileAsText(file) {
 export async function readResumeFile(file) {
   if (!file) throw new Error("No file selected");
   const lower = file.name.toLowerCase();
-  if (lower.endsWith(".pdf")) {
-    const buf = await file.arrayBuffer();
-    return await extractTextFromPdf(buf);
-  }
-  if (lower.endsWith(".txt") || lower.endsWith(".md") || lower.endsWith(".rtf") || lower.endsWith(".doc") || lower.endsWith(".docx")) {
-    return await readFileAsText(file);
-  }
-  throw new Error("Unsupported file. Upload .pdf, .txt, .md or paste text instead.");
+  const buf = await file.arrayBuffer();
+  if (lower.endsWith(".pdf")) return await extractTextFromPdf(buf);
+  if (lower.endsWith(".docx")) return await extractTextFromDocx(buf);
+  if (lower.endsWith(".txt") || lower.endsWith(".md") || lower.endsWith(".rtf")) return await readFileAsText(file);
+  if (lower.endsWith(".doc")) throw new Error("Old .doc files aren't supported. Save as .docx or .pdf instead, or paste your resume text.");
+  throw new Error("Unsupported file. Upload .pdf, .docx, .txt, .md or paste text instead.");
 }
 
 export function parseResume(text) {
@@ -166,7 +171,7 @@ function inferJobRole(jd) {
     ["finance", "accountant", "auditor", "financial"],
     ["customer support", "customer success", "support"],
   ];
-  for (const [role, keys] of roles) {
+  for (const [role, ...keys] of roles) {
     if (keys.some((k) => lower.includes(k))) return titleCase(role);
   }
   return "Professional";
@@ -307,5 +312,40 @@ export function scoreResume(parsed, jd) {
   if (parsed.skills.length < 8) issues.push("List 8+ relevant skills so ATS software can match you to more roles.");
   if (issues.length === 0) issues.push("Strong match! Keep tailoring your resume to each specific job description.");
 
-  return { score: points, keywordMatch, matched, total: jdWords.length, issues };
+  const missingKeywords = jdWords.filter((w) => !allText.includes(w));
+  return { score: points, keywordMatch, matched, total: jdWords.length, issues, missingKeywords };
+}
+
+export function generateInterviewQuestions(optimized, jd) {
+  const role = optimized.role;
+  const kw = optimized.keywords.slice(0, 6);
+  const missing = jd ? extractKeywords(jd).filter((k) => !optimized.keywords.includes(k)).slice(0, 4) : [];
+
+  const behavioral = [
+    `Tell me about a time you solved a difficult problem related to ${role} work.`,
+    "Describe a project where you had to work under a tight deadline. What did you do?",
+    `Walk me through a time you used ${kw[0] || "your strongest skill"} to deliver a measurable result.`,
+    "How do you prioritize tasks when everything is urgent? Give a concrete example.",
+  ];
+  const technical = kw.map((k) => `What real projects or examples can you share that demonstrate your experience with ${k}?`);
+  const fit = missing.length
+    ? missing.map((k) => `The job mentions ${k} — do you have experience with it, and how would you learn it quickly?`)
+    : ["Why do you want to work here, and what makes you a good fit for this team?"];
+
+  return { role, behavioral, technical, fit };
+}
+
+export function generateLinkedInToolkit(parsed, optimized, jd, company) {
+  const role = optimized.role;
+  const skills = optimized.skills.slice(0, 5).join(", ");
+  const kw = optimized.keywords.slice(0, 5).join(", ");
+  const exp = optimized.experience[0] || "delivering measurable results";
+  const companyName = company.trim() || "your target company";
+
+  const headline = `${role} | ${optimized.keywords.slice(0, 3).join(" • ")}`;
+  const about = `${optimized.name || "Your Name"} — ${role} with hands-on experience in ${skills}. Known for ${exp}, with a focus on ${kw}. Passionate about building solutions that create real, measurable impact. Open to roles at ${companyName} and similar teams.`;
+  const skillsSection = optimized.skills.slice(0, 12).join(", ");
+  const experiencePost = `I'm looking for ${role} opportunities — if you know a team hiring for this, let's connect!`;
+
+  return { headline, about, skillsSection, experiencePost };
 }
