@@ -35,8 +35,7 @@ export const siteConfig = {
 
   // Social links used in the footer.
   socials: {
-    linkedin: "#",
-    instagram: "#",
+    linkedin: "https://www.linkedin.com/in/syed-hassan-a15a5537b",
     github: "#",
   },
 
