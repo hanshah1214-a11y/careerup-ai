@@ -2,7 +2,7 @@
 // MONETIZATION CONFIG — edit these to start earning
 // =============================================================
 //
-// Payments are collected via NayaPay (Pakistan). The buyer sees
+// Payments are collected via EasyPaisa (Pakistan). The buyer sees
 // your account details on the checkout popup, transfers the money,
 // then taps "I've paid" to confirm on WhatsApp — you verify and
 // they're upgraded.
@@ -15,21 +15,21 @@ export const siteConfig = {
   // Used for sales chat + payment confirmation.
   whatsapp: "923028344138",
 
-  // NayaPay receiving account — shown to buyers on the paywall.
-  nayaPay: {
-    accountName: "SYED M HASSAN NAWAJ BUKHARI",
-    accountNumber: "03028344138",
+  // EasyPaisa receiving account — shown to buyers on the paywall.
+  easypaisa: {
+    accountName: "ASMA RAZA",
+    accountNumber: "PK48TMFB0000000085237253",
     amountPKR: "1,500", // premium price in PKR
     proAmountPKR: "3,000", // pro price in PKR
   },
 
   // Card checkout (LemonSqueezy). Optional — leave "your-store" and
-  // card payments stay hidden; NayaPay + WhatsApp are used instead.
+  // card payments stay hidden; EasyPaisa + WhatsApp are used instead.
   premiumCheckout: "https://your-store.lemonsqueezy.com/buy/xxxxxx",
   proCheckout: "https://your-store.lemonsqueezy.com/buy/xxxxxx",
 
   // SECRET for unlock codes. CHANGE THIS to any long random string —
-  // the admin page uses it to generate codes after a NayaPay payment.
+  // the admin page uses it to generate codes after a EasyPaisa payment.
   // Keep it private (anyone with it can create free premium codes).
   unlockSecret: "careerup-dade1ecd42be1586d491102221a0ce0efe429db0af2784f6",
 

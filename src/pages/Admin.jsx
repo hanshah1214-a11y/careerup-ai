@@ -16,7 +16,7 @@ function LoginCard({ pin, setPin, authError, handleAuth }) {
         </div>
         <h1 className="text-2xl font-extrabold text-slate-900 mb-1">Seller Dashboard</h1>
         <p className="text-sm text-slate-500 mb-6">
-          Generate unlock codes for buyers after verifying their NayaPay payment.
+          Generate unlock codes for buyers after verifying their EasyPaisa payment.
         </p>
         <form onSubmit={handleAuth} className="space-y-3">
           <input
@@ -190,7 +190,7 @@ export default function Admin() {
               <ShieldCheck size={14} className="text-emerald-600" /> How to use
             </p>
             <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
-              <li>Buyer pays <b>{amount}</b> to your NayaPay account.</li>
+              <li>Buyer pays <b>{amount}</b> to your EasyPaisa account.</li>
               <li>They confirm on WhatsApp with a screenshot.</li>
               <li>Verify the money, then generate a code here.</li>
               <li>Email it or send on WhatsApp — buyer pastes it on the site.</li>

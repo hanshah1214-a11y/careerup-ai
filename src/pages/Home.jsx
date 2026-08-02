@@ -270,11 +270,11 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 py-20">
           <Reveal>
             <h2 className="text-3xl font-bold text-center text-slate-900 mb-3">How payment works</h2>
-            <p className="text-center text-slate-500 mb-12">Pay safely via NayaPay — your account is activated within minutes.</p>
+            <p className="text-center text-slate-500 mb-12">Pay safely via EasyPaisa — your account is activated within minutes.</p>
           </Reveal>
           <div className="grid gap-8 md:grid-cols-4">
             {[
-              ["1", "Send payment", `Transfer the plan amount to NayaPay ${siteConfig.nayaPay.accountNumber} (${siteConfig.nayaPay.accountName}).`],
+              ["1", "Send payment", `Transfer the plan amount to EasyPaisa ${siteConfig.easypaisa.accountNumber} (${siteConfig.easypaisa.accountName}).`],
               ["2", "Confirm on WhatsApp", "Tap confirm after paying and send us your payment screenshot."],
               ["3", "Receive your code", "We verify and email your personal unlock code instantly."],
               ["4", "Paste & enjoy", "Enter the code on the checkout popup and premium activates right away."],
@@ -351,7 +351,7 @@ export default function Home() {
               ["Is my resume safe?", "Yes. Everything runs in your browser — we never store or send your resume anywhere."],
               ["Why do I need an ATS score?", "Over 75% of resumes are rejected by automated systems before a human sees them. We tell you exactly what to fix."],
               ["How is the AI free?", "Our optimizer runs on smart in-browser AI so the free tier has no hidden costs for us — that's why it stays free."],
-              ["How do I pay for Premium?", "Pay via NayaPay, confirm on WhatsApp with your screenshot, and your unlock code is emailed to you within minutes. Paste it on the site to activate premium."],
+              ["How do I pay for Premium?", "Pay via EasyPaisa, confirm on WhatsApp with your screenshot, and your unlock code is emailed to you within minutes. Paste it on the site to activate premium."],
               ["Can I get a refund?", "Yes — 7-day money-back guarantee, no questions asked. Message us on WhatsApp."],
             ].map(([q, a], i) => (
               <Reveal key={q} delay={i * 0.06}>

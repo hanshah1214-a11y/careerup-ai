@@ -37,7 +37,7 @@ export default function CheckoutModal({ open, plan = "Premium", price = "$4", on
   if (!open) return null;
 
   const cardReady = isCheckoutConfigured();
-  const pkr = plan === "Pro" ? siteConfig.nayaPay.proAmountPKR : siteConfig.nayaPay.amountPKR;
+  const pkr = plan === "Pro" ? siteConfig.easypaisa.proAmountPKR : siteConfig.easypaisa.amountPKR;
 
   const handleCard = () => {
     if (cardReady) {
@@ -46,7 +46,7 @@ export default function CheckoutModal({ open, plan = "Premium", price = "$4", on
   };
 
   const confirmWhatsApp = () => {
-    const msg = `Hi! I have paid for CareerUp AI ${plan} (Rs ${pkr}) via NayaPay.\n\nAccount: ${siteConfig.nayaPay.accountName}\nTo: ${siteConfig.nayaPay.accountNumber}\n\nMy email for the unlock code: ${buyerEmail || "not provided"}\n\nHere is my payment screenshot/transaction ID. Please send my unlock code.`;
+    const msg = `Hi! I have paid for CareerUp AI ${plan} (Rs ${pkr}) via EasyPaisa.\n\nAccount: ${siteConfig.easypaisa.accountName}\nIBAN: ${siteConfig.easypaisa.accountNumber}\n\nMy email for the unlock code: ${buyerEmail || "not provided"}\n\nHere is my payment screenshot/transaction ID. Please send my unlock code.`;
     window.open(whatsappUrl(msg), "_blank", "noopener");
   };
 
@@ -159,7 +159,7 @@ export default function CheckoutModal({ open, plan = "Premium", price = "$4", on
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">NayaPay (Pakistan)</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">EasyPaisa (Pakistan)</p>
                     <p className="text-sm text-slate-500 mt-0.5">Send the exact amount below</p>
                   </div>
                   <div className="text-right">
@@ -170,15 +170,15 @@ export default function CheckoutModal({ open, plan = "Premium", price = "$4", on
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-500">Account title</span>
-                    <span className="font-semibold text-slate-800">{siteConfig.nayaPay.accountName}</span>
+                    <span className="font-semibold text-slate-800">{siteConfig.easypaisa.accountName}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">NayaPay number</span>
+                    <span className="text-slate-500">EasyPaisa IBAN</span>
                     <span className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-slate-800">{siteConfig.nayaPay.accountNumber}</span>
+                      <span className="font-mono font-semibold text-slate-800">{siteConfig.easypaisa.accountNumber}</span>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(siteConfig.nayaPay.accountNumber);
+                          navigator.clipboard.writeText(siteConfig.easypaisa.accountNumber);
                           setCopiedAcc(true);
                           setTimeout(() => setCopiedAcc(false), 1500);
                         }}
