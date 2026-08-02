@@ -21,6 +21,7 @@ export default function CheckoutModal({ open, plan = "Premium", price = "$4", on
   const [code, setCode] = useState("");
   const [codeStatus, setCodeStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const [buyerEmail, setBuyerEmail] = useState("");
   if (!open) return null;
 
   const cardReady = isCheckoutConfigured();
@@ -51,7 +52,7 @@ export default function CheckoutModal({ open, plan = "Premium", price = "$4", on
     }
   };
 
-  const confirmMessage = `Hi! I have paid for CareerUp AI ${plan} (Rs ${pkr}) via NayaPay.\n\nAccount: ${siteConfig.nayaPay.accountName}\nTo: ${siteConfig.nayaPay.accountNumber}\n\nHere is my payment screenshot/transaction ID. Please upgrade my account.`;
+  const confirmMessageWithEmail = `Hi! I have paid for CareerUp AI ${plan} (Rs ${pkr}) via NayaPay.\n\nAccount: ${siteConfig.nayaPay.accountName}\nTo: ${siteConfig.nayaPay.accountNumber}\n\nMy email for the unlock code: ${buyerEmail || "not provided"}\n\nHere is my payment screenshot/transaction ID. Please send my unlock code.`;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -124,10 +125,17 @@ export default function CheckoutModal({ open, plan = "Premium", price = "$4", on
             <CheckCircle2 size={40} className="mx-auto text-emerald-500 mb-3" />
             <h4 className="font-bold text-slate-900 mb-1">Almost done!</h4>
             <p className="text-sm text-slate-600 mb-4">
-              Open WhatsApp and send your payment screenshot. I'll upgrade you the moment it's verified.
+              Add your email so we can send your unlock code, then confirm on WhatsApp with your payment screenshot.
             </p>
+            <input
+              type="email"
+              value={buyerEmail}
+              onChange={(e) => setBuyerEmail(e.target.value)}
+              placeholder="your@email.com (for your unlock code)"
+              className="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
             <a
-              href={whatsappUrl(confirmMessage)}
+              href={whatsappUrl(confirmMessageWithEmail)}
               target="_blank"
               rel="noreferrer"
               onClick={onUpgraded}

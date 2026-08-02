@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { KeyRound, Copy, Check, ShieldCheck, Lock, Clock } from "lucide-react";
+import { KeyRound, Copy, Check, ShieldCheck, Lock, Clock, Mail, Send } from "lucide-react";
 import { generateUnlockCode } from "../lib/unlock.js";
+import { emailUnlockCode, isEmailConfigured } from "../lib/email.js";
 import { siteConfig } from "../lib/config.js";
 
 export default function Admin() {
@@ -12,6 +13,9 @@ export default function Admin() {
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [emailStatus, setEmailStatus] = useState("");
+  const [sending, setSending] = useState(false);
 
   const handleAuth = (e) => {
     e.preventDefault();
@@ -31,6 +35,28 @@ export default function Admin() {
     setCode(c);
     setGenerating(false);
     setCopied(false);
+    setEmailStatus("");
+  };
+
+  const handleEmail = async () => {
+    if (!code) {
+      setEmailStatus("Generate a code first.");
+      return;
+    }
+    setSending(true);
+    setEmailStatus("");
+    try {
+      await emailUnlockCode({
+        toEmail: buyerEmail.trim(),
+        code,
+        plan: plan === "pro" ? "Pro" : "Premium",
+        days,
+      });
+      setEmailStatus("Code sent to buyer's email.");
+    } catch (err) {
+      setEmailStatus(err.message);
+    }
+    setSending(false);
   };
 
   if (!authed) {
@@ -135,11 +161,43 @@ export default function Admin() {
       {code && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
           <div className="flex items-center gap-2 text-emerald-700 font-semibold text-sm mb-2">
-            <ShieldCheck size={16} /> Code generated — send it to the buyer on WhatsApp
+            <ShieldCheck size={16} /> Code generated
           </div>
           <div className="bg-white border border-emerald-200 rounded-xl p-4 font-mono text-sm text-slate-800 break-all mb-3 select-all">
             {code}
           </div>
+
+          {/* Email delivery */}
+          <div className="bg-white border border-emerald-200 rounded-xl p-4 mb-3">
+            <label className="block text-xs font-bold uppercase tracking-wide text-slate-400 mb-1.5 flex items-center gap-1.5">
+              <Mail size={12} className="text-indigo-500" /> Buyer's email (deliver code by email)
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="email"
+                value={buyerEmail}
+                onChange={(e) => setBuyerEmail(e.target.value)}
+                placeholder="buyer@email.com"
+                className="flex-1 border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <button
+                onClick={handleEmail}
+                disabled={sending || !isEmailConfigured()}
+                className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-4 py-2.5 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <Send size={14} /> {sending ? "Sending…" : "Email Code"}
+              </button>
+            </div>
+            {emailStatus && (
+              <p className={`text-sm mt-2 ${emailStatus.includes("sent") ? "text-emerald-600" : "text-amber-600"}`}>{emailStatus}</p>
+            )}
+            {!isEmailConfigured() && (
+              <p className="text-[11px] text-slate-400 mt-2">
+                Email not configured yet — see src/lib/email.js for the 5-min EmailJS setup. WhatsApp works meanwhile.
+              </p>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <button
               onClick={() => {
@@ -168,8 +226,8 @@ export default function Admin() {
         <ol className="list-decimal list-inside space-y-1">
           <li>Buyer sends Rs {plan === "pro" ? "3,000" : "1,500"} to your NayaPay account.</li>
           <li>They confirm on WhatsApp and send the screenshot.</li>
-          <li>Verify the payment, then generate a code above and send it back.</li>
-          <li>They redeem it on the site and premium activates instantly.</li>
+          <li>Verify the payment, then generate a code above.</li>
+          <li>Email the code to the buyer (or send on WhatsApp) — they paste it on the site to activate premium.</li>
         </ol>
       </div>
     </div>

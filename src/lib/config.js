@@ -33,6 +33,15 @@ export const siteConfig = {
   // Keep it private (anyone with it can create free premium codes).
   unlockSecret: "careerup-dade1ecd42be1586d491102221a0ce0efe429db0af2784f6",
 
+  // EmailJS — delivers unlock codes to buyers by email.
+  // See src/lib/email.js for the 5-minute setup. Leave empty to
+  // keep WhatsApp delivery only.
+  emailjs: {
+    serviceId: "", // e.g. "service_abc123"
+    templateId: "", // e.g. "template_x9y8z7"
+    publicKey: "", // e.g. "AbCdEf123456789"
+  },
+
   // Social links used in the footer.
   socials: {
     linkedin: "https://www.linkedin.com/in/syed-hassan-a15a5537b",
