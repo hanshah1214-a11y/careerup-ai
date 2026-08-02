@@ -27,7 +27,7 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "$4",
+    price: "Rs 1,500",
     period: "/month",
     cta: "Get Premium",
     highlight: true,
@@ -35,7 +35,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$9",
+    price: "Rs 3,000",
     period: "/month",
     cta: "Get Pro",
     highlight: false,
@@ -48,7 +48,7 @@ export default function Home() {
 
   const openCheckout = (plan) => {
     if (plan === "Free") return;
-    setCheckout(plan === "Pro" ? { plan: "Pro", price: "$9" } : { plan: "Premium", price: "$4" });
+    setCheckout(plan === "Pro" ? { plan: "Pro", price: "Rs 3,000" } : { plan: "Premium", price: "Rs 1,500" });
   };
 
   return (
@@ -184,6 +184,28 @@ export default function Home() {
         </div>
       </section>
 
+      {/* HOW TO PAY */}
+      <section className="bg-white border-y border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 py-20">
+          <h2 className="text-3xl font-bold text-center text-slate-900 mb-3">How payment works</h2>
+          <p className="text-center text-slate-500 mb-12">Pay safely via NayaPay — your account is activated within minutes.</p>
+          <div className="grid gap-8 md:grid-cols-4">
+            {[
+              ["1", "Send payment", `Transfer the plan amount to NayaPay ${siteConfig.nayaPay.accountNumber} (${siteConfig.nayaPay.accountName}).`],
+              ["2", "Confirm on WhatsApp", "Tap confirm after paying and send us your payment screenshot."],
+              ["3", "Receive your code", "We verify and email your personal unlock code instantly."],
+              ["4", "Paste & enjoy", "Enter the code on the checkout popup and premium activates right away."],
+            ].map(([n, t, d]) => (
+              <div key={n} className="text-center">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white text-lg font-bold flex items-center justify-center mx-auto mb-4">{n}</div>
+                <h3 className="font-bold text-slate-900 mb-1">{t}</h3>
+                <p className="text-sm text-slate-600">{d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section id="faq" className="bg-white border-y border-slate-200">
         <div className="max-w-3xl mx-auto px-4 py-20">
@@ -193,7 +215,7 @@ export default function Home() {
               ["Is my resume safe?", "Yes. Everything runs in your browser — we never store or send your resume anywhere."],
               ["Why do I need an ATS score?", "Over 75% of resumes are rejected by automated systems before a human sees them. We tell you exactly what to fix."],
               ["How is the AI free?", "Our optimizer runs on smart in-browser AI so the free tier has no hidden costs for us — that's why it stays free."],
-              ["How do I pay for Premium?", "Pay securely via NayaPay (Pakistan) or card. Your account is upgraded within minutes of payment verification."],
+              ["How do I pay for Premium?", "Pay via NayaPay, confirm on WhatsApp with your screenshot, and your unlock code is emailed to you within minutes. Paste it on the site to activate premium."],
               ["Can I get a refund?", "Yes — 7-day money-back guarantee, no questions asked. Message us on WhatsApp."],
             ].map(([q, a]) => (
               <details key={q} className="group bg-slate-50 border border-slate-200 rounded-xl p-5">
