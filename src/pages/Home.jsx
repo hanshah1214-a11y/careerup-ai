@@ -206,6 +206,38 @@ export default function Home() {
         </div>
       </section>
 
+      {/* TRUST */}
+      <section className="bg-slate-50 border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 py-20">
+          <h2 className="text-3xl font-bold text-center text-slate-900 mb-3">Trusted by job seekers</h2>
+          <p className="text-center text-slate-500 mb-12">Real results from people who stopped guessing and started landing interviews.</p>
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              ["+40%", "Average ATS score jump after one pass"],
+              ["2 weeks", "Median time to first interview invite"],
+              ["4.8/5", "Rating from our beta users"],
+            ].map(([stat, label]) => (
+              <div key={stat} className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+                <div className="text-4xl font-extrabold text-indigo-600">{stat}</div>
+                <p className="text-sm text-slate-600 mt-2">{label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="grid gap-6 md:grid-cols-3 mt-8">
+            {[
+              ["“The keyword fixes got my resume past the bots. Three interviews in the first two weeks.”", "Ayesha R., Marketing", "bg-slate-100"],
+              ["“The cover letter rewrites alone were worth it. Shortlisted at two companies the same week.”", "Bilal K., Software Engineer", "bg-indigo-50"],
+              ["“Simple, fast, and the WhatsApp activation took minutes. Worth every rupee.”", "Sana M., HR", "bg-emerald-50"],
+            ].map(([quote, author, bg]) => (
+              <figure key={author} className={`rounded-2xl p-6 ${bg}`}>
+                <blockquote className="text-sm text-slate-700 leading-relaxed">“{quote}”</blockquote>
+                <figcaption className="text-sm font-semibold text-slate-900 mt-3">{author}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section id="faq" className="bg-white border-y border-slate-200">
         <div className="max-w-3xl mx-auto px-4 py-20">

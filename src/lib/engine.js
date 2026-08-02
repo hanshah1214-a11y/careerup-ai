@@ -267,12 +267,34 @@ export function optimizeResume(parsed, jd) {
   };
 }
 
-export function generateCoverLetter(parsed, optimized, jd, company) {
+export function generateCoverLetter(parsed, optimized, jd, company, style = "professional") {
   const companyName = company.trim() || "the Company";
   const role = optimized.role;
   const skills = optimized.skills.slice(0, 4).join(", ").toLowerCase();
   const kw = optimized.keywords.slice(0, 5).join(", ");
   const exp = optimized.experience[0] || "delivering measurable results";
+
+  if (style === "short") {
+    return `Dear Hiring Manager,
+
+I'm ${parsed.name}, a ${role} applying for the open position at ${companyName}. I bring hands-on experience in ${skills} and a track record of ${exp}.
+
+I'd love to discuss how I can help ${companyName}. Available for an interview any day.
+
+Best,
+${parsed.name}`;
+  }
+
+  if (style === "enthusiastic") {
+    return `Dear Hiring Manager,
+
+I couldn't be more excited to apply for the ${role} role at ${companyName}! As someone who genuinely loves ${kw}, I've spent my career turning ${skills} into real, measurable wins — including ${exp}.
+
+Joining ${companyName} would be a dream come true. I'd be thrilled to bring my energy and experience to your team.
+
+Warmly,
+${parsed.name}`;
+  }
 
   return `Dear Hiring Manager,
 
@@ -313,7 +335,14 @@ export function scoreResume(parsed, jd) {
   if (issues.length === 0) issues.push("Strong match! Keep tailoring your resume to each specific job description.");
 
   const missingKeywords = jdWords.filter((w) => !allText.includes(w));
-  return { score: points, keywordMatch, matched, total: jdWords.length, issues, missingKeywords };
+
+  const density = jdWords.slice(0, 10).map((w) => {
+    const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
+    const count = (allText.match(re) || []).length;
+    return { keyword: w, count };
+  });
+
+  return { score: points, keywordMatch, matched, total: jdWords.length, issues, missingKeywords, density };
 }
 
 export function generateInterviewQuestions(optimized, jd) {
@@ -332,7 +361,16 @@ export function generateInterviewQuestions(optimized, jd) {
     ? missing.map((k) => `The job mentions ${k} — do you have experience with it, and how would you learn it quickly?`)
     : ["Why do you want to work here, and what makes you a good fit for this team?"];
 
-  return { role, behavioral, technical, fit };
+  const star = [
+    {
+      s: `Situation — describe a project you owned that relates to ${role} work and mattered to the business.`,
+      t: "Task — what specific goal were you responsible for?",
+      a: `Action — walk through the steps you took using ${kw[0] || "your strongest skill"}.`,
+      r: "Result — quantify the outcome (%, time saved, revenue, users helped).",
+    },
+  ];
+
+  return { role, behavioral, technical, fit, star };
 }
 
 export function generateLinkedInToolkit(parsed, optimized, jd, company) {
