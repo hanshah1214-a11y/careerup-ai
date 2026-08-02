@@ -491,7 +491,7 @@ export default function Builder() {
         plan="Premium"
         price="$4"
         onClose={() => setShowPaywall(false)}
-        onUpgraded={upgrade}
+        onUpgraded={(plan, expiresAt) => upgrade(plan, expiresAt)}
       />
     </div>
   );

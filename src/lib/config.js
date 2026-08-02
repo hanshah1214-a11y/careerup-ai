@@ -28,6 +28,11 @@ export const siteConfig = {
   premiumCheckout: "https://your-store.lemonsqueezy.com/buy/xxxxxx",
   proCheckout: "https://your-store.lemonsqueezy.com/buy/xxxxxx",
 
+  // SECRET for unlock codes. CHANGE THIS to any long random string —
+  // the admin page uses it to generate codes after a NayaPay payment.
+  // Keep it private (anyone with it can create free premium codes).
+  unlockSecret: "careerup-7f3a9c21-b8e4d6f0a2c1e9b7d5f3a0c2",
+
   // Social links used in the footer.
   socials: {
     linkedin: "#",

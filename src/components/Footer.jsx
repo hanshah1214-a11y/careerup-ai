@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Mail, MessageCircle } from "lucide-react";
 import { siteConfig } from "../lib/config.js";
 
@@ -61,7 +62,8 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+        © {new Date().getFullYear()} {siteConfig.name}. All rights reserved. ·{" "}
+        <Link to="/admin" className="hover:text-slate-300">Seller Admin</Link>
       </div>
     </footer>
   );
